@@ -53,14 +53,16 @@ export const HEURISTIC_RULES: HeuristicRule[] = [
             dynamicSeverity: 'high',
             dynamicReason: `Detected operating cash runway of ${match[1]} ${match[2]}. Less than 4 months leaves zero buffer for fundraising cycles.`
           };
-        } else {
+        } else if (inWeeks <= 26) {
           return {
             matched: true,
             phrase: match[0],
             dynamicSeverity: 'medium',
-            dynamicReason: `Detected runway mention: "${match[0]}". Runway is above immediate panic thresholds but requires monitoring.`
+            dynamicReason: `Detected runway mention: "${match[0]}". Runway is approaching 6-month threshold; monitor burn velocity.`
           };
         }
+        // Healthy cash runway (> 26 weeks / 6 months) is NOT a risk
+        return null;
       }
 
       // Check general low cash indicators
@@ -107,9 +109,14 @@ export const HEURISTIC_RULES: HeuristicRule[] = [
     baseSeverity: 'critical',
     baseWeight: 30,
     matcher: (text: string) => {
+      // Avoid false positive on "unblocked"
+      if (/\bunblocked\b/i.test(text) && !/\b(?:still\s+)?blocked\b/i.test(text)) {
+        return null;
+      }
+
       // Matches "payment integration is still blocked", "api is blocked", "stripe blocker", etc.
-      const match = text.match(/(?:payment|auth|stripe|database|api|backend|third[- ]party|vendor)?\s*(?:integration|service|pipeline|build|pr|release)?\s*(?:is\s*)?(?:still\s*)?(?:blocked|failing|stuck|broken|down|unresponsive)/i);
-      if (match && match[0].trim().length > 7) {
+      const match = text.match(/(?:payment|auth|stripe|database|api|backend|third[- ]party|vendor)?\s*(?:integration|service|pipeline|build|pr|release)?\s*(?:is\s*)?(?:still\s*)?\b(?:blocked|failing|stuck|broken|down|unresponsive)\b/i);
+      if (match && match[0].trim().length > 6) {
         return { matched: true, phrase: match[0] };
       }
       const genericBlocked = text.match(/(blocked integration|integration is blocked|payment integration is still blocked|blocking our launch)/i);
@@ -172,6 +179,11 @@ export const HEURISTIC_RULES: HeuristicRule[] = [
     baseSeverity: 'critical',
     baseWeight: 35,
     matcher: (text: string) => {
+      // If review is passed/completed without negative negation, do not flag
+      if (/security review (?:passed|completed|approved|successful)/i.test(text) && !/(?:not|haven't|have not)/i.test(text)) {
+        return null;
+      }
+
       // Matches "have not completed the security review", "security audit pending", etc.
       const match = text.match(/(?:not|haven't|have not|pending|skipped|no|missing|uncompleted)\s*(?:completed|done|finished)?\s*(?:the\s*)?(?:security review|security audit|penetration test|pentest|security check|infosec clearance)/i);
       if (match) {
@@ -214,9 +226,14 @@ export const HEURISTIC_RULES: HeuristicRule[] = [
     baseSeverity: 'high',
     baseWeight: 25,
     matcher: (text: string) => {
-      const match = text.match(/(?:haven't updated|missing|no|outdated)?\s*(?:our\s*)?(?:gdpr|hipaa|soc2|privacy policy|dpa agreements?|terms of service|data processing)/i);
-      if (match && match[0].length > 4) {
+      // Must require a negative/deficit qualifier
+      const match = text.match(/(?:haven't updated|have not updated|missing|no|lacking|outdated|failed|breached|non-compliant|gap in|issue with|audit failure)\s*(?:our\s*)?(?:gdpr|hipaa|soc2|privacy policy|dpa agreements?|terms of service|data processing)/i);
+      if (match) {
         return { matched: true, phrase: match[0] };
+      }
+      const altMatch = text.match(/(?:gdpr|hipaa|soc2|privacy policy|dpa agreements?)\s*(?:is|are)?\s*(?:missing|outdated|incomplete|non-compliant|not updated|pending|delayed)/i);
+      if (altMatch) {
+        return { matched: true, phrase: altMatch[0] };
       }
       return null;
     },
@@ -251,6 +268,11 @@ export const HEURISTIC_RULES: HeuristicRule[] = [
     baseSeverity: 'critical',
     baseWeight: 35,
     matcher: (text: string) => {
+      // Ignore positive retention notes
+      if (/(?:zero|no|prevented|avoided)\s*(?:customer\s*)?churn/i.test(text) || /all\s*(?:enterprise\s*)?accounts\s*renewed/i.test(text)) {
+        return null;
+      }
+
       const match = text.match(/(?:largest|enterprise|key|biggest|flagship)?\s*(?:customer|client|account)\s*(?:is\s*)?(?:threaten(?:ing|s)|leaving|churning|cancelling|terminat(?:ing|e)|discontent)/i);
       if (match) {
         return { matched: true, phrase: match[0] };
