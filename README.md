@@ -2,6 +2,18 @@
 
 > A private, local-first risk intelligence tool for startup founders and engineering teams. Dictate or paste project updates to surface hidden delivery blockers, cash crunches, security omissions, and customer churn threats before they escalate into company-killing emergencies.
 
+[![Watch RiskLens Product Demo](https://img.shields.io/badge/YouTube-Watch%20Live%20Demo%20Video-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=h7O8IaUTSQA)
+
+---
+
+## 📺 Live Video Walkthrough & Demo
+
+Watch the complete product demonstration showcasing voice update capture, deterministic heuristic assessment, and the startup risk register in action:
+
+👉 **[Watch the RiskLens Demo on YouTube](https://www.youtube.com/watch?v=h7O8IaUTSQA)**
+
+[![RiskLens Video Demo Preview](https://img.youtube.com/vi/h7O8IaUTSQA/hqdefault.jpg)](https://www.youtube.com/watch?v=h7O8IaUTSQA)
+
 ---
 
 ## 🧭 Overview & Mission
